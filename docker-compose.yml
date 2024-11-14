@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: defenceless_db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: cta
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h defenceless_db -p 5432 -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  goapp:
+    build: .
+    container_name: defenceless_app
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_USER: admin
+      DB_PASSWORD: password
+      DB_NAME: cta
+      DB_HOST: defenceless_db
+      DB_PORT: 5431
+    restart: always
+    links:
+      - db
+
+volumes:
+  postgres_data:
